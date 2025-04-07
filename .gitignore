@@ -1,3 +1,6 @@
 .venv
 venv
 .idea
+
+
+pip freeze > requirements.txt
