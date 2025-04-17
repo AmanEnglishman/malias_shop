@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, Product
+from .models import Category, Product, Review
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -30,3 +30,30 @@ class CategoryWithProductsSerializer(serializers.ModelSerializer):
     def get_products(self, obj):
         products = obj.product_set.all()
         return ProductSerializer(products, many=True).data
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Review
+        fields =('id', 'product', 'user', 'rating', 'created_at')
+        read_only_fields = ['created_at']
+        validators = []  # <-- отключает проверку unique_together от DRF
+
+
+    def create(self, validated_data):
+        user = validated_data['user']
+        product = validated_data['product']
+        rating = validated_data['rating']
+
+        # Ищем уже существующий отзыв
+        existing = Review.objects.filter(user=user, product=product).first()
+        if existing:
+            # Обновляем и возвращаем
+            existing.rating = rating
+            existing.save()
+            return existing
+
+        # Если нет — создаём
+        return super().create(validated_data)
