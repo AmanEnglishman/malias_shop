@@ -1,8 +1,5 @@
-from datetime import timedelta
 from django.contrib.auth.models import User
 from django.db import models
-from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 from mptt.models import MPTTModel, TreeForeignKey
 
 
@@ -43,6 +40,17 @@ class Product(models.Model):
         verbose_name='Дата создания',
         auto_now_add=True
     )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.CASCADE,
+        verbose_name='Категория',
+        null=True,
+        blank=True
+    )
+    is_new = models.BooleanField(
+        default=False,
+        verbose_name='Новый ли'
+    )
 
     def __str__(self):
         return f'{self.title} - {self.price} $'
@@ -54,12 +62,6 @@ class Product(models.Model):
     @property
     def average_rating(self):
         return self.reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0
-
-    def is_new(self):
-        created_at_dt = self.created_at
-        if isinstance(created_at_dt, str):
-            created_at_dt = parse_datetime(created_at_dt)
-        return timezone.now() - created_at_dt <= timedelta(days=7)
 
 
 class Review(models.Model):
